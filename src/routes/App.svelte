@@ -3,6 +3,7 @@
     import exampleImage from "./exampleImage";
     import { uniformnoise16 } from "./uniformnoise";
     import { whitenoise16 } from "./whitenoise";
+    import favicon from "$lib/assets/favicon.svg";
 
     const numf = new Intl.NumberFormat("us", {
         maximumFractionDigits: 2,
@@ -171,9 +172,12 @@
 <title>Single Sample per Pixel Convolution</title>
 
 <main>
-    <h1>Single Sample Per Pixel Convolution</h1>
+    <h1>
+        <img width="32" height="32" src={favicon} alt="Icon" />
+        <span>Single sample per pixel convolution (SSPP/1SSP)</span>
+    </h1>
     <p>
-        <em>Single Sample per Pixel (SSPP)</em> is a stochastic trick to improve the
+        <em>Single Sample per Pixel (1SPP)</em> is a stochastic trick to improve the
         performance of otherwise expensive convolution operations by sampling only
         a single pixel from the input image for calculating each output pixel.
     </p>
@@ -865,6 +869,9 @@
             </svg>
         </figure>
     </div>
+    <footer>
+        <a href="//tools.laszlokorte.de">more educational tools</a>
+    </footer>
 </main>
 
 <style>
@@ -885,7 +892,7 @@
     }
     svg {
         display: block;
-        min-width: 20em;
+        min-width: 10em;
     }
 
     .figure {

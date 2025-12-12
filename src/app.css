@@ -1,3 +1,27 @@
 h1 {
-    color: mediumvioletred;
+    color: #005533;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5ex;
+    font-size: 1.6em;
+    font-family: monospace;
+}
+
+h1 img {
+    width: 2em;
+    height: 2em;
+    vertical-align: top;
+}
+
+footer {
+    margin-top: 1em;
+    border-top: 1px solid #aaa;
+    padding: 1em 0 2em;
+    text-align: center;
+    font-family: monospace;
+}
+
+a {
+    color: #005533;
 }

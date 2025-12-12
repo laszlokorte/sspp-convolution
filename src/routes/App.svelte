@@ -42,7 +42,7 @@
     const noises = [
         { data: bluenoise16, label: "blue" },
         { data: whitenoise16, label: "white" },
-        { data: uniformnoise16, label: "uniform" },
+        { data: uniformnoise16, label: "constant" },
     ];
     let noiseSource = $derived(noises[noiseIndex].data);
 
@@ -174,24 +174,71 @@
     <h1>Single Sample Per Pixel Convolution</h1>
     <p>
         <em>Single Sample per Pixel (SSPP)</em> is a stochastic trick to improve the
-        performance of otherwise expensive convolution operations.
+        performance of otherwise expensive convolution operations by sampling only
+        a single pixel from the input image for calculating each output pixel.
     </p>
+    <details>
+        <summary>Explanation</summary>
+        <div>
+            <p>
+                In classic convolution, a filter kernel is shifted across an
+                image and at each location each kernel pixel is multiplied with
+                each overlapping image pixel, to the sum the products. For large
+                filter kernels this calculation is expensive. With an
+                11&cross;11 kernel for example 121 multiplications are needed
+                for each pixel in the output image to be calculated.
+            </p>
+            <p>
+                With <em>SSPP</em> instead of shifting the kernel itself across the
+                image, the kernel is interpreted as probability distribution. It can
+                be summed up into the corresponding cumulative distribution. This
+                distribution can then be sampled to select a single position in the
+                kernel each each step. High values in the original filter kernel correspond
+                to positions that are likely to be picked.
+            </p>
+            <p>
+                Then while sliding the window across the input image at each
+                window position a single coordinate is sampled from the
+                distribution to determine which pixel from the input image
+                should be used as output pixel. This decreases the cost from
+                being linear in kernel area size to being constant time per
+                input image pixel.
+            </p>
+            <p>
+                For sampling from the cumulative distribution a precalulated
+                source of randomness (of proper size) can be used. The source of
+                randomness has an influence on the result as well.
+            </p>
+            <p>
+                Below you can see a Gaussian filter kernel, its corresponding
+                cummulative distribution, different kinds of noise sources you
+                can choose from, the input image and the resulting output image.
+            </p>
+            <p>
+                Click on a pixel in the output image to understand how its value
+                is calculated. The green square in the input image shows the
+                window from which a pixel is picked. The small magenta square
+                inside the gree window shows the single actually picked pixel.
+                The location of this picked value corresponds to the location of
+                the pixel sampled from the cumulated filter kernel. This sample
+                in turn is picked by choosing a sample value from the noise
+                source and the finding the first entry in the cumulative filter
+                kernel, that is greater or equal to the picked random value.
+            </p>
+            <p>
+                You can also pick a single sample value by hand, using the <em
+                    >Sample Value</em
+                > slider and see how it effects the resulting location in the cumulated
+                filter kernel. Alternatively you can click on a pixel in the cumulated
+                kernel to retreive the corresponding sample value.
+            </p>
+        </div>
+    </details>
     <p>
-        In classic convolution, a filter kernel is shifted across an image and
-        at each location each kernel pixel is multiplied with each overlapping
-        image pixel, and then summed together. For large filter kernels this
-        calculation is expensive.
+        Try to play around with the variance of the filter and with the types of
+        noise sources to see how it effects the resulting output image.
     </p>
-    <p>
-        With <em>SSPP</em> instead the kernel is transformed into a cumulative probability
-        density function and then at each shifting position sampled to select only
-        a single pixel from the input image. This decreases the cost from being linear
-        in kernel size to being constant time per input image pixel.
-    </p>
-    <p>
-        For sampling the probability distribution a precalulated source of
-        randomness (of proper size) can be used.
-    </p>
+
     <div class="galery">
         <figure class="figure">
             <figcaption>Filter Kernel (Gaussian)</figcaption>
@@ -827,6 +874,7 @@
     }
     .galery {
         display: flex;
+        flex-wrap: wrap-reverse;
         gap: 1ex;
         margin: 1ex;
     }
@@ -837,6 +885,7 @@
     }
     svg {
         display: block;
+        min-width: 20em;
     }
 
     .figure {
@@ -861,6 +910,7 @@
         display: flex;
         align-items: center;
         gap: 1ex;
+        white-space: nowrap;
     }
     .radio-list {
         display: flex;
@@ -881,5 +931,20 @@
     }
     input[type="radio"] {
         margin: 0;
+    }
+    summary {
+        cursor: pointer;
+        padding: 1em;
+        background-color: #111;
+        color: #fff;
+        font-family: monospace;
+        margin: 1ex;
+    }
+    summary + div {
+        margin: 1em;
+        padding-bottom: 1ex;
+    }
+    details {
+        background-color: #eee;
     }
 </style>

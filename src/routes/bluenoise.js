@@ -1,5 +1,5 @@
 export const bluenoise16 = {
-  size: { x: 16, y: 16, stride: 16 },
+  size: { x: 5, y: 5, stride: 16 },
   max: 1,
   values: [
     0.2573385536670685, 0.7827788591384888, 0.33463796973228455,

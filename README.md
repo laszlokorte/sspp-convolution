@@ -1,3 +1,7 @@
+![Preview of the 2D Convolution Tool](preview.png)
+
+[Live Demo](https://static.laszlokorte.de/sspp-conv/)
+
 # Single Sample Per Pixel Convolution
 
 Single Sample per Pixel (SSPP) is a stochastic trick to improve the performance of otherwise expensive convolution operations.

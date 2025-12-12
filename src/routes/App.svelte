@@ -10,7 +10,7 @@
     let noiseCoord = $state({ x: 0, y: 0 });
     let convCoord = $state({ x: 0, y: 0 });
     let name = $state("world");
-    const stride = 10;
+    const stride = 11;
     let kernel = $state({
         size: { x: stride, y: stride, stride: stride },
         max: 1 / Math.sqrt(2),
@@ -117,9 +117,11 @@
                     (v, i, a) => v >= noiseVal || i + 1 == a.length,
                 );
                 const offsetX =
-                    kernel.size.x / 2 - 1 - (noisePos % kernel.size.stride);
+                    Math.floor(kernel.size.x / 2) -
+                    1 -
+                    (noisePos % kernel.size.stride);
                 const offsetY =
-                    kernel.size.y / 2 -
+                    Math.floor(kernel.size.y / 2) -
                     1 -
                     Math.floor(noisePos / kernel.size.stride);
                 const sampleX =
@@ -571,11 +573,11 @@
                             fill-opacity="0.5"
                             opacity={0.9}
                             x={(convCoord.x -
-                                kernel.size.x / 2 +
+                                Math.floor(kernel.size.x / 2) +
                                 xx * inputImage.size.x) *
                                 scale}
                             y={(convCoord.y -
-                                kernel.size.y / 2 +
+                                Math.floor(kernel.size.y / 2) +
                                 yy * inputImage.size.y) *
                                 scale}
                         ></rect>
@@ -591,7 +593,7 @@
                     opacity={0.9}
                     x={((convCoord.x -
                         1 -
-                        kernel.size.x / 2 +
+                        Math.floor(kernel.size.x / 2) +
                         kernel.size.x -
                         (samplePosition % kernel.size.stride) +
                         inputImage.size.x) %
@@ -599,7 +601,7 @@
                         scale}
                     y={((convCoord.y -
                         1 -
-                        kernel.size.y / 2 +
+                        Math.floor(kernel.size.y / 2) +
                         kernel.size.y -
                         Math.floor(samplePosition / kernel.size.stride) +
                         inputImage.size.y) %

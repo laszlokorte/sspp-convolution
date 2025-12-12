@@ -1,22 +1,28 @@
 <script>
     import { bluenoise16 } from "./bluenoise";
     import exampleImage from "./exampleImage";
+    import { uniformnoise16 } from "./uniformnoise";
+    import { whitenoise16 } from "./whitenoise";
 
     const numf = new Intl.NumberFormat("us", {
         maximumFractionDigits: 2,
         minimumFractionDigits: 2,
     });
     let sampleValue = $state(0.5);
-    let noiseCoord = $state({ x: 0, y: 0 });
+    let variance = $state(1);
+    let noiseCoord = $state({ x: 0, y: 0, selected: false });
     let convCoord = $state({ x: 0, y: 0 });
     let name = $state("world");
     const stride = 11;
-    let kernel = $state({
+    let kernel = $derived({
         size: { x: stride, y: stride, stride: stride },
         max: 1 / Math.sqrt(2),
         values: Array(stride * stride)
-            .fill(0)
-            .map((_, i) => {
+            .fill(variance)
+            .map((v, i) => {
+                if (v == 0) {
+                    return i == (stride * stride - 1) / 2 ? 1 : 0;
+                }
                 const x = i % stride;
                 const y = (i - x) / stride;
 
@@ -24,11 +30,21 @@
                 const dy = y - (stride - 1) / 2;
 
                 const d = Math.hypot(dx, dy);
-                return (Math.exp((-d * d) / 4) * Math.PI) / Math.sqrt(2);
+                return (
+                    (Math.exp((-d * d) / Math.pow(v, 2)) * Math.PI) /
+                    Math.sqrt(2) /
+                    v
+                );
             }),
     });
 
-    let noiseSource = $state(bluenoise16);
+    let noiseIndex = $state(0);
+    const noises = [
+        { data: bluenoise16, label: "blue" },
+        { data: whitenoise16, label: "white" },
+        { data: uniformnoise16, label: "uniform" },
+    ];
+    let noiseSource = $derived(noises[noiseIndex].data);
 
     //  function extractGrayscalePixels(img, width = 64, height = 64) {
     //      // Create a canvas
@@ -80,7 +96,7 @@
             .fill(0)
             .map((_, i) => {
                 let sum = 0;
-                for (let l = 0; l < i; l++) {
+                for (let l = 0; l <= i; l++) {
                     sum += kernel.values[l];
                 }
 
@@ -118,11 +134,9 @@
                 );
                 const offsetX =
                     Math.floor(kernel.size.x / 2) -
-                    1 -
                     (noisePos % kernel.size.stride);
                 const offsetY =
                     Math.floor(kernel.size.y / 2) -
-                    1 -
                     Math.floor(noisePos / kernel.size.stride);
                 const sampleX =
                     (x + offsetX + inputImage.size.x) % inputImage.size.x;
@@ -130,6 +144,25 @@
                     (y + offsetY + inputImage.size.y) % inputImage.size.y;
                 return inputImage.values[sampleX + 64 * sampleY];
             }),
+    });
+    const singleSampleNoisePos = $derived(
+        kernelPrefix.findIndex(
+            (v, i, a) => v >= sampleValue || i + 1 == a.length,
+        ),
+    );
+    let outputImageSingleSample = $derived.by(() => {
+        const x = convCoord.x;
+        const y = convCoord.y;
+        const noisePos = singleSampleNoisePos;
+
+        const offsetX =
+            Math.floor(kernel.size.x / 2) - (noisePos % kernel.size.stride);
+        const offsetY =
+            Math.floor(kernel.size.y / 2) -
+            Math.floor(noisePos / kernel.size.stride);
+        const sampleX = (x + offsetX + inputImage.size.x) % inputImage.size.x;
+        const sampleY = (y + offsetY + inputImage.size.y) % inputImage.size.y;
+        return inputImage.values[sampleX + 64 * sampleY];
     });
 
     const scale = 30;
@@ -159,22 +192,24 @@
         For sampling the probability distribution a precalulated source of
         randomness (of proper size) can be used.
     </p>
-    <span class="slider-control">
-        <label>
-            Sample Value
-            <input
-                type="range"
-                min="0"
-                max="1"
-                bind:value={sampleValue}
-                step={numf.format(1 / (stride * stride))}
-            /></label
-        >
-        <output>{numf.format(sampleValue)}</output>
-    </span>
     <div class="galery">
         <figure class="figure">
-            <figcaption>Filter Kernel</figcaption>
+            <figcaption>Filter Kernel (Gaussian)</figcaption>
+            <div class="radio-list">
+                <span class="slider-control">
+                    <label>
+                        Variance
+                        <input
+                            type="range"
+                            min="0"
+                            max="6"
+                            bind:value={variance}
+                            step={numf.format(1 / 2)}
+                        /></label
+                    >
+                    <output>{numf.format(variance)}</output>
+                </span>
+            </div>
             <svg
                 onpointerdown={(e) => {
                     if (e.isPrimary) {
@@ -200,6 +235,7 @@
                                 Math.floor(svgGlobal.y / scale),
                             ),
                         );
+                        noiseCoord.selected = false;
                         sampleValue = kernelPrefix[x + stride * y];
                     }
                 }}
@@ -228,6 +264,7 @@
                                 Math.floor(svgGlobal.y / scale),
                             ),
                         );
+                        noiseCoord.selected = false;
                         sampleValue = kernelPrefix[x + stride * y];
                     }
                 }}
@@ -252,7 +289,7 @@
                 <rect
                     width={scale}
                     height={scale}
-                    fill="magenta"
+                    fill="deeppink"
                     fill-opacity="0.4"
                     stroke-width={scale / 10}
                     stroke="magenta"
@@ -265,6 +302,21 @@
 
         <figure class="figure">
             <figcaption>Cumulated Filter Kernel</figcaption>
+            <div class="radio-list">
+                <span class="slider-control">
+                    <label>
+                        Sample Value
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            bind:value={sampleValue}
+                            step={numf.format(1 / (stride * stride))}
+                        /></label
+                    >
+                    <output>{numf.format(sampleValue)}</output>
+                </span>
+            </div>
             <svg
                 onpointerdown={(e) => {
                     if (e.isPrimary) {
@@ -291,6 +343,7 @@
                             ),
                         );
 
+                        noiseCoord.selected = false;
                         sampleValue = kernelPrefix[x + stride * y];
                     }
                 }}
@@ -320,6 +373,7 @@
                             ),
                         );
 
+                        noiseCoord.selected = false;
                         sampleValue = kernelPrefix[x + stride * y];
                     }
                 }}
@@ -342,7 +396,7 @@
                 <rect
                     width={scale}
                     height={scale}
-                    fill="magenta"
+                    fill="deeppink"
                     fill-opacity="0.4"
                     stroke-width={scale / 10}
                     stroke="magenta"
@@ -355,6 +409,17 @@
 
         <figure class="figure">
             <figcaption>Noise Source</figcaption>
+            <div class="radio-list">
+                {#each noises as n, ni}
+                    <label class="radio-control">
+                        <input
+                            type="radio"
+                            bind:group={noiseIndex}
+                            value={ni}
+                        />{n.label}</label
+                    >
+                {/each}
+            </div>
             <svg
                 onpointerdown={(e) => {
                     if (e.isPrimary) {
@@ -382,6 +447,7 @@
                         );
                         noiseCoord.x = newX;
                         noiseCoord.y = newY;
+                        noiseCoord.selected = true;
                         sampleValue =
                             noiseSource.values[
                                 newX + newY * noiseSource.size.stride
@@ -415,6 +481,7 @@
                         );
                         noiseCoord.x = newX;
                         noiseCoord.y = newY;
+                        noiseCoord.selected = true;
                         sampleValue =
                             noiseSource.values[
                                 newX + newY * noiseSource.size.stride
@@ -427,8 +494,9 @@
                 {#each Array(noiseSource.size.y) as _, y}
                     {#each Array(noiseSource.size.x) as _, x}
                         {@const intensity =
-                            noiseSource.values[x + y * kernel.size.stride] /
-                            noiseSource.max}
+                            noiseSource.values[
+                                x + y * noiseSource.size.stride
+                            ] / noiseSource.max}
                         <rect
                             x={scale * x}
                             y={scale * y}
@@ -439,17 +507,19 @@
                     {/each}
                 {/each}
 
-                <rect
-                    width={scale}
-                    height={scale}
-                    stroke-width={(2 * scale) / 10}
-                    stroke="cyan"
-                    fill="cyan"
-                    fill-opacity="0.5"
-                    opacity={0.9}
-                    x={noiseCoord.x * scale}
-                    y={noiseCoord.y * scale}
-                ></rect>
+                {#if noiseCoord.selected}
+                    <rect
+                        width={scale}
+                        height={scale}
+                        stroke-width={(2 * scale) / 10}
+                        stroke="cyan"
+                        fill="turquoise"
+                        fill-opacity="0.6"
+                        opacity={0.9}
+                        x={noiseCoord.x * scale}
+                        y={noiseCoord.y * scale}
+                    ></rect>
+                {/if}
             </svg>
         </figure>
     </div>
@@ -495,6 +565,7 @@
                             noiseSource.size.x;
                         noiseCoord.x = newX;
                         noiseCoord.y = newY;
+                        noiseCoord.selected = true;
                         sampleValue =
                             noiseSource.values[
                                 newX + newY * noiseSource.size.stride
@@ -538,6 +609,7 @@
                             noiseSource.size.x;
                         noiseCoord.x = newX;
                         noiseCoord.y = newY;
+                        noiseCoord.selected = true;
                         sampleValue =
                             noiseSource.values[
                                 newX + newY * noiseSource.size.stride
@@ -568,8 +640,8 @@
                             width={scale * kernel.size.x}
                             height={scale * kernel.size.y}
                             stroke-width={(2 * scale) / 10}
-                            stroke="cyan"
-                            fill="cyan"
+                            stroke="lime"
+                            fill="mediumspringgreen"
                             fill-opacity="0.5"
                             opacity={0.9}
                             x={(convCoord.x -
@@ -588,7 +660,7 @@
                     height={scale}
                     stroke-width={(2 * scale) / 10}
                     stroke="magenta"
-                    fill="magenta"
+                    fill="deeppink"
                     fill-opacity="0.5"
                     opacity={0.9}
                     x={((convCoord.x -
@@ -650,6 +722,7 @@
                             noiseSource.size.x;
                         noiseCoord.x = newX;
                         noiseCoord.y = newY;
+                        noiseCoord.selected = true;
                         sampleValue =
                             noiseSource.values[
                                 newX + newY * noiseSource.size.stride
@@ -693,6 +766,7 @@
                             noiseSource.size.x;
                         noiseCoord.x = newX;
                         noiseCoord.y = newY;
+                        noiseCoord.selected = true;
                         sampleValue =
                             noiseSource.values[
                                 newX + newY * noiseSource.size.stride
@@ -722,8 +796,20 @@
                     width={scale}
                     height={scale}
                     stroke-width={(2 * scale) / 10}
-                    stroke="cyan"
-                    fill="cyan"
+                    fill="hsl(0,0%,{numf.format(
+                        outputImageSingleSample * 100,
+                    )}%)"
+                    opacity={0.9}
+                    x={convCoord.x * scale}
+                    y={convCoord.y * scale}
+                ></rect>
+
+                <rect
+                    width={scale}
+                    height={scale}
+                    stroke-width={(2 * scale) / 10}
+                    stroke="lime"
+                    fill="mediumspringgreen"
                     fill-opacity="0.5"
                     opacity={0.9}
                     x={convCoord.x * scale}
@@ -769,10 +855,31 @@
         display: flex;
         align-items: center;
         gap: 1ex;
+        accent-color: hotpink;
     }
     .slider-control > label {
         display: flex;
         align-items: center;
         gap: 1ex;
+    }
+    .radio-list {
+        display: flex;
+        gap: 1em;
+        justify-content: center;
+        align-items: baseline;
+        padding: 0.5ex;
+    }
+    .radio-control {
+        display: flex;
+        gap: 1ex;
+        align-items: center;
+        justify-content: center;
+    }
+    .radio-control:has(:checked) {
+        color: cyan;
+        accent-color: turquoise;
+    }
+    input[type="radio"] {
+        margin: 0;
     }
 </style>

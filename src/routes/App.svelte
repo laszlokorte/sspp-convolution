@@ -167,6 +167,17 @@
     });
 
     const scale = 30;
+
+    function toSvgColor(v) {
+        let c = Math.max(
+            0,
+            Math.min(255, Math.round((v / 100) * 255)),
+        ).toString(16);
+        if (c.length < 2) {
+            c = "0" + c;
+        }
+        return `#${c}${c}${c}`;
+    }
 </script>
 
 <title>Single Sample per Pixel Convolution</title>
@@ -295,6 +306,7 @@
                         e.isPrimary &&
                         e.currentTarget.hasPointerCapture(e.pointerId)
                     ) {
+                        e.preventDefault();
                         const pt = e.currentTarget.createSVGPoint();
                         pt.x = e.clientX;
                         pt.y = e.clientY;
@@ -319,6 +331,8 @@
                         sampleValue = kernelPrefix[x + stride * y];
                     }
                 }}
+                width={kernel.size.x}
+                height={kernel.size.y}
                 viewBox="{-5} {-5} {10 + kernel.size.x * scale} {10 +
                     kernel.size.y * scale}"
             >
@@ -327,11 +341,11 @@
                         <rect
                             x={scale * x}
                             y={scale * y}
-                            fill="hsl(0,0%,{numf.format(
+                            fill={toSvgColor(
                                 (kernel.values[x + y * kernel.size.stride] /
                                     kernel.max) *
                                     100,
-                            )}%)"
+                            )}
                             width={scale}
                             height={scale}
                         ></rect>
@@ -403,6 +417,7 @@
                         e.isPrimary &&
                         e.currentTarget.hasPointerCapture(e.pointerId)
                     ) {
+                        e.preventDefault();
                         const pt = e.currentTarget.createSVGPoint();
                         pt.x = e.clientX;
                         pt.y = e.clientY;
@@ -428,6 +443,8 @@
                         sampleValue = kernelPrefix[x + stride * y];
                     }
                 }}
+                width={kernel.size.x}
+                height={kernel.size.y}
                 viewBox="{-5} {-5} {10 + kernel.size.x * scale} {10 +
                     kernel.size.y * scale}"
             >
@@ -436,9 +453,9 @@
                         <rect
                             x={scale * x}
                             y={scale * y}
-                            fill="hsl(0,0%,{numf.format(
+                            fill={toSvgColor(
                                 kernelPrefix[x + y * kernel.size.stride] * 100,
-                            )}%)"
+                            )}
                             width={scale}
                             height={scale}
                         ></rect>
@@ -510,6 +527,7 @@
                         e.isPrimary &&
                         e.currentTarget.hasPointerCapture(e.pointerId)
                     ) {
+                        e.preventDefault();
                         const pt = e.currentTarget.createSVGPoint();
                         pt.x = e.clientX;
                         pt.y = e.clientY;
@@ -539,6 +557,8 @@
                             ];
                     }
                 }}
+                width={noiseSource.size.x}
+                height={noiseSource.size.y}
                 viewBox="{-5} {-5} {10 + noiseSource.size.x * scale} {10 +
                     noiseSource.size.y * scale}"
             >
@@ -551,7 +571,7 @@
                         <rect
                             x={scale * x}
                             y={scale * y}
-                            fill="hsl(0,0%,{numf.format(intensity * 100)}%)"
+                            fill={toSvgColor(intensity * 100)}
                             width={scale}
                             height={scale}
                         ></rect>
@@ -580,6 +600,8 @@
             <figcaption>Input Image</figcaption>
 
             <svg
+                width={inputImage.size.x}
+                height={inputImage.size.y}
                 viewBox="{-5} {-5} {10 + inputImage.size.x * scale} {10 +
                     inputImage.size.y * scale}"
                 onpointerdown={(e) => {
@@ -630,6 +652,7 @@
                         e.isPrimary &&
                         e.currentTarget.hasPointerCapture(e.pointerId)
                     ) {
+                        e.preventDefault();
                         const pt = e.currentTarget.createSVGPoint();
                         pt.x = e.clientX;
                         pt.y = e.clientY;
@@ -675,11 +698,11 @@
                         <rect
                             x={scale * x}
                             y={scale * y}
-                            fill="hsl(0,0%,{numf.format(
+                            fill={toSvgColor(
                                 inputImage.values[
                                     x + y * inputImage.size.stride
                                 ] * 100,
-                            )}%)"
+                            )}
                             width={scale}
                             height={scale}
                         ></rect>
@@ -737,6 +760,8 @@
             <figcaption>Output Image</figcaption>
 
             <svg
+                width={outputImage.size.x}
+                height={outputImage.size.y}
                 viewBox="{-5} {-5} {10 + outputImage.size.x * scale} {10 +
                     outputImage.size.y * scale}"
                 onpointerdown={(e) => {
@@ -787,6 +812,7 @@
                         e.isPrimary &&
                         e.currentTarget.hasPointerCapture(e.pointerId)
                     ) {
+                        e.preventDefault();
                         const pt = e.currentTarget.createSVGPoint();
                         pt.x = e.clientX;
                         pt.y = e.clientY;
@@ -832,11 +858,11 @@
                         <rect
                             x={scale * x}
                             y={scale * y}
-                            fill="hsl(0,0%,{numf.format(
+                            fill={toSvgColor(
                                 outputImage.values[
                                     x + y * outputImage.size.stride
                                 ] * 100,
-                            )}%)"
+                            )}
                             width={scale}
                             height={scale}
                         ></rect>
@@ -847,9 +873,7 @@
                     width={scale}
                     height={scale}
                     stroke-width={(2 * scale) / 10}
-                    fill="hsl(0,0%,{numf.format(
-                        outputImageSingleSample * 100,
-                    )}%)"
+                    fill={toSvgColor(outputImageSingleSample * 100)}
                     opacity={0.9}
                     x={convCoord.x * scale}
                     y={convCoord.y * scale}
@@ -893,6 +917,8 @@
     svg {
         display: block;
         min-width: 10em;
+        width: 100%;
+        height: auto;
     }
 
     .figure {
